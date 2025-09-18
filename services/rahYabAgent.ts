@@ -73,44 +73,42 @@ async function* runInitialAnalysis(
     knowledgeBaseContext: string,
 ): AsyncGenerator<OperationStatus | StrategicBriefing, void, undefined> {
 
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    // --- PHASE 1: Research & Synthesis ---
+    const researchPrompt = getTaskPrompt(query, level, inputMode, settings, knowledgeBaseContext);
+    const researchConfig: GenerateContentConfig = {
+        temperature: settings.temperature,
+        topP: settings.topP,
+        systemInstruction: settings.systemInstruction,
+    };
+    if (settings.liveSearchEnabled) {
+        researchConfig.tools = [{ googleSearch: {} }];
+    }
+
+    const initialStatus: OperationStatus = {
+        phase: ProtocolPhase.IDLE,
+        message: 'مقداردهی اولیه عامل هوشمند...',
+        progress: 2,
+        operationsLog: ['عامل هوشمند مقداردهی اولیه شد. در انتظار شروع پروتکل...'],
+        searchVectors: [],
+        liveSearchResults: [],
+    };
+    yield initialStatus;
+
+    let currentStatus = { ...initialStatus };
+    let thinkingContent = '';
+
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const taskPrompt = getTaskPrompt(query, level, inputMode, settings, knowledgeBaseContext);
-        
-        const config: GenerateContentConfig = {
-            temperature: settings.temperature,
-            topP: settings.topP,
-            systemInstruction: settings.systemInstruction,
-        };
-
-        if (settings.liveSearchEnabled) {
-            config.tools = [{ googleSearch: {} }];
-        }
-
-        const initialStatus: OperationStatus = {
-            phase: ProtocolPhase.IDLE,
-            message: 'مقداردهی اولیه عامل هوشمند...',
-            progress: 2,
-            operationsLog: ['عامل هوشمند مقداردهی اولیه شد. در انتظار شروع پروتکل...'],
-            searchVectors: [],
-            liveSearchResults: [],
-        };
-        yield initialStatus;
-
-        const stream = await ai.models.generateContentStream({
+        const researchStream = await ai.models.generateContentStream({
             model: settings.model,
-            contents: taskPrompt,
-            config,
+            contents: researchPrompt,
+            config: researchConfig,
         });
 
         let buffer = '';
-        let thinkingContent = '';
-        let jsonBuffer = '';
-        let inThinkingBlock = true;
+        let inThinkingBlock = false;
         let lastProcessedThinkingIndex = 0;
-        let finalReport: StrategicBriefing | null = null;
-        
-        let currentStatus = { ...initialStatus };
         
         const phaseRegex = /\[PHASE:\s*([A-Z_]+)\]/g;
         const sourceRegex = /<FOUND_SOURCE\s+url="([^"]+)"\s+title="([^"]+)"\s+summary="([^"]+)"\s*\/>/g;
@@ -119,44 +117,39 @@ async function* runInitialAnalysis(
         const foundSourceUrls = new Set<string>();
         const foundVectors = new Set<string>();
 
-        for await (const chunk of stream) {
-            if (chunk.promptFeedback?.blockReason) {
+        for await (const chunk of researchStream) {
+             if (chunk.promptFeedback?.blockReason) {
                 const reason = chunk.promptFeedback.blockReason;
                 throw new Error(`درخواست توسط مدل به دلیل "${reason}" مسدود شد. لطفاً درخواست را تغییر دهید.`);
             }
 
             buffer += chunk.text;
-
+            
             const thinkingStartTag = '<thinking>';
             const thinkingEndTag = '</thinking>';
+
+            if (!inThinkingBlock) {
+                const startTagIndex = buffer.indexOf(thinkingStartTag);
+                if (startTagIndex !== -1) {
+                    inThinkingBlock = true;
+                    buffer = buffer.substring(startTagIndex + thinkingStartTag.length);
+                }
+            }
             
-            if (inThinkingBlock) {
+            if(inThinkingBlock) {
                 const endTagIndex = buffer.indexOf(thinkingEndTag);
                 if (endTagIndex !== -1) {
-                    const startTagIndex = buffer.indexOf(thinkingStartTag);
-                    if (startTagIndex !== -1) {
-                         thinkingContent = buffer.substring(startTagIndex + thinkingStartTag.length, endTagIndex);
-                    }
-                    jsonBuffer = buffer.substring(endTagIndex + thinkingEndTag.length);
-                    inThinkingBlock = false;
+                    thinkingContent += buffer.substring(0, endTagIndex);
+                    // Stop processing the stream for this phase, the rest is for the next phase
+                    break;
                 } else {
-                    const startTagIndex = buffer.indexOf(thinkingStartTag);
-                     if (startTagIndex !== -1) {
-                        thinkingContent = buffer.substring(startTagIndex + thinkingStartTag.length);
-                     }
+                    thinkingContent = buffer;
                 }
-            } else {
-                 const endTagIndex = buffer.indexOf(thinkingEndTag);
-                 if (endTagIndex !== -1) {
-                    jsonBuffer = buffer.substring(endTagIndex + thinkingEndTag.length);
-                 }
             }
+
 
             const newThinkingText = thinkingContent.substring(lastProcessedThinkingIndex);
             
-            // --- Process thinking block for live updates ---
-            
-            // Update Phase
             const phaseMatches = [...newThinkingText.matchAll(phaseRegex)];
             const latestPhaseMatch = phaseMatches.pop();
             if (latestPhaseMatch) {
@@ -165,13 +158,12 @@ async function* runInitialAnalysis(
                     currentStatus.phase = newPhase;
                     currentStatus.message = PHASE_DATA[newPhase].description;
                     const currentPhaseIndex = PHASE_ORDER.indexOf(newPhase);
-                    currentStatus.progress = 5 + Math.floor(((currentPhaseIndex + 1) / PHASE_ORDER.length) * 90);
+                    currentStatus.progress = 5 + Math.floor(((currentPhaseIndex + 1) / PHASE_ORDER.length) * 85); // Cap at 85% for this phase
                 }
             }
 
-            // Update Search Vectors
-             const vectorMatches = [...newThinkingText.matchAll(vectorRegex)];
-             if (vectorMatches.length > 0) {
+            const vectorMatches = [...newThinkingText.matchAll(vectorRegex)];
+            if (vectorMatches.length > 0) {
                 const currentVectors = currentStatus.searchVectors || [];
                 vectorMatches.forEach(match => {
                     const newQuery = match[1].trim();
@@ -183,7 +175,6 @@ async function* runInitialAnalysis(
                 currentStatus.searchVectors = currentVectors;
             }
 
-            // Update Found Sources
             const sourceMatches = [...newThinkingText.matchAll(sourceRegex)];
             if (sourceMatches.length > 0) {
                  const currentSources = currentStatus.liveSearchResults || [];
@@ -203,55 +194,82 @@ async function* runInitialAnalysis(
                  currentStatus.liveSearchResults = currentSources;
             }
 
-            // Update Operations Log
             currentStatus.operationsLog = thinkingContent
-                .replace(sourceRegex, '') // Clean source tags from log display
+                .replace(sourceRegex, '')
                 .replace(vectorRegex, '')
                 .replace(/\[PHASE:\s*[A-Z_]+\]/g, (match) => `\n**${match}**\n`)
-                .split('\n')
-                .map(line => line.trim())
-                .filter(Boolean);
+                .split('\n').map(line => line.trim()).filter(Boolean);
 
             lastProcessedThinkingIndex = thinkingContent.length;
-
             yield { ...currentStatus };
         }
-        
-        // --- After stream ends, parse the final JSON ---
-        try {
-            // Clean up potential markdown wrappers
-            const cleanedJsonBuffer = jsonBuffer.trim().replace(/^```json\s*/, '').replace(/\s*```$/, '');
-            if (cleanedJsonBuffer) {
-                const reportData = JSON.parse(cleanedJsonBuffer);
-                finalReport = {
-                    ...reportData,
-                    query: query, 
-                    searchLevel: level,
-                    id: `briefing-${Date.now()}`,
-                    timestamp: new Date().toISOString()
-                };
-            }
-        } catch (e) {
-            console.error("Failed to parse final JSON report:", e, "Buffer:", jsonBuffer);
-            // Dont throw error yet, allow final status update before throwing
-        }
-
-        if (finalReport) {
-            currentStatus.phase = ProtocolPhase.COMPLETE;
-            currentStatus.message = PHASE_DATA.COMPLETE.description;
-            currentStatus.progress = 100;
-            currentStatus.searchVectors = currentStatus.searchVectors?.map(v => ({...v, status: 'complete'}));
-            yield { ...currentStatus };
-            yield finalReport;
-        } else {
-            console.error("Final buffer content:", buffer);
-            throw new Error("پروتکل به پایان رسید اما گزارش نهایی تولید نشد. ممکن است پاسخ مدل ناقص یا نامعتبر باشد.");
-        }
-
     } catch (error) {
-        console.error("An error occurred during the RAH-YAB protocol:", error);
+         console.error("An error occurred during RAH-YAB Research phase:", error);
+         const descriptiveError = error instanceof Error ? error.message : String(error);
+         throw new Error(`فاز تحلیل با خطا مواجه شد: ${descriptiveError}`);
+    }
+
+    currentStatus.phase = ProtocolPhase.SOLUTION_ENGINEERING;
+    currentStatus.message = PHASE_DATA[ProtocolPhase.SOLUTION_ENGINEERING].description;
+    currentStatus.progress = 90;
+    yield { ...currentStatus };
+    
+    // --- PHASE 2: Solution Engineering ---
+    let finalReport: StrategicBriefing | null = null;
+    try {
+        const engineeringPrompt = `
+        بر اساس تحلیل عمیق زیر که توسط پروتکل Rah-Yab انجام شده است، گزارش استراتژیک نهایی را تولید کن.
+        خروجی شما باید **فقط و فقط** یک آبجکت JSON معتبر باشد. هیچ متن یا توضیح اضافی خارج از آبجکت JSON قرار نده.
+        
+        --- تحلیل کامل ---
+        ${thinkingContent}
+        --- پایان تحلیل ---
+        `;
+
+        const engineeringConfig: GenerateContentConfig = {
+            temperature: settings.temperature,
+            topP: settings.topP,
+        };
+
+        const finalReportResponse = await ai.models.generateContent({
+            model: settings.model,
+            contents: engineeringPrompt,
+            config: engineeringConfig
+        });
+        
+        const jsonBuffer = finalReportResponse.text;
+
+        const cleanedJsonBuffer = jsonBuffer.trim().replace(/^```json\s*/, '').replace(/\s*```$/, '');
+        if (cleanedJsonBuffer) {
+            const reportData = JSON.parse(cleanedJsonBuffer);
+            finalReport = {
+                ...reportData,
+                query: query, 
+                searchLevel: level,
+                id: `briefing-${Date.now()}`,
+                timestamp: new Date().toISOString()
+            };
+        }
+
+    } catch(error) {
+        console.error("An error occurred during RAH-YAB Solution Engineering phase:", error);
         const descriptiveError = error instanceof Error ? error.message : String(error);
-        throw new Error(`فرایند تحلیل با خطا مواجه شد: ${descriptiveError}`);
+        if (descriptiveError.includes("JSON")) {
+            throw new Error(`گزارش نهایی تولید شده توسط مدل، ساختار JSON معتبری نداشت. ${descriptiveError}`);
+        }
+        throw new Error(`فاز مهندسی راه‌حل با خطا مواجه شد: ${descriptiveError}`);
+    }
+
+
+    if (finalReport) {
+        currentStatus.phase = ProtocolPhase.COMPLETE;
+        currentStatus.message = PHASE_DATA.COMPLETE.description;
+        currentStatus.progress = 100;
+        currentStatus.searchVectors = currentStatus.searchVectors?.map(v => ({...v, status: 'complete'}));
+        yield { ...currentStatus };
+        yield finalReport;
+    } else {
+        throw new Error("پروتکل به پایان رسید اما گزارش نهایی تولید نشد. ممکن است پاسخ مدل ناقص یا نامعتبر باشد.");
     }
 }
 
@@ -269,9 +287,8 @@ export async function* runInitialAnalysisWithRetry(
         try {
             const generator = runInitialAnalysis(query, level, inputMode, settings, knowledgeBaseContext);
             const timeoutPromise = new Promise<never>((_, reject) => {
-                // Increased timeout to 5 minutes (300,000 ms) to allow for complex analyses
-                // This is the primary fix for timeout errors and resulting truncated JSON.
-                setTimeout(() => reject(new Error("عملیات به دلیل زمان طولانی متوقف شد.")), 300000); 
+                // Increased timeout to 8 minutes (480,000 ms) for the entire two-phase process.
+                setTimeout(() => reject(new Error("عملیات به دلیل زمان طولانی متوقف شد.")), 480000); 
             });
 
             const generatorWithTimeout = async function*() {
@@ -294,7 +311,6 @@ export async function* runInitialAnalysisWithRetry(
             lastError = error instanceof Error ? error : new Error(String(error));
 
             if (attempt < maxRetries) {
-                // Yield a status update about retry
                 yield {
                     phase: ProtocolPhase.RETRYING,
                     message: `تلاش ${attempt + 1} با خطا مواجه شد. در حال تلاش مجدد...`,
@@ -308,7 +324,6 @@ export async function* runInitialAnalysisWithRetry(
         }
     }
 
-    // If we get here, all retries failed
     throw lastError || new Error("عملیات پس از چند تلاش ناموفق بود.");
 }
 
