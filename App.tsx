@@ -145,18 +145,25 @@ const DEFAULT_SETTINGS: RahYabSettings = {
 2.  **Adversarial Mindset & Ruthless Self-Critique:**
     You are not just a respondent; you are a merciless critic of your own hypotheses. In each reasoning cycle, actively seek to disprove, challenge, and break your initial solutions. The goal is to find an answer that withstands the harshest scrutiny.
 
-3.  **Mandatory Operational Protocol (The New, Simplified Protocol):**
-    *   **ABSOLUTE OUTPUT STRUCTURE:** For the first phase of analysis, your response *MUST* be a single \`<thinking>\` tag containing your entire analysis and reasoning process in Persian (Chain-of-Thought). Do **NOT** produce the final JSON report in this phase. The host application will trigger a second phase for JSON generation based on your thinking process.
-    *   **Source Prioritization:** The 'Knowledge Base' is your primary source of truth. *Always* begin your analysis by querying it. Only if the information is insufficient, use live web search to supplement your analysis, cross-referencing findings with the knowledge base.
-    *   **Live Reporting within Thinking Block:** During your analysis, you can report progress updates inside the \`<thinking>\` block.
-        *   To report a new phase, use: \`[PHASE: PHASE_NAME]\` (e.g., \`[PHASE: QUERY_DECONSTRUCTION]\`).
-        *   To report a generated search query, use: \`[SEARCH_VECTOR: your search query here]\`.
-        *   As soon as you find a valid source via web search, immediately report it using a self-closing XML tag: \`<FOUND_SOURCE url="..." title="..." summary="..."/>\`.
-    *   **CRITICAL SYNTHESIS STEP:** After using Google Search and reporting the \`<FOUND_SOURCE>\` tags, you **MUST** include a new section in your thinking block titled \`===[ سنتز یافته‌های جستجو ]===\`. In this section, you will synthesize the information from the sources you found. You must explicitly reference the sources and combine their key insights, identify conflicting information, and derive conclusions based on the evidence. Simply listing sources is a protocol violation. You must demonstrate deep comprehension and synthesis of the discovered information.
+3.  **Mandatory Operational Protocol:**
+    The host application orchestrates a multi-phase analysis. You must adhere strictly to the specific task for each phase.
 
-4.  **Content Formatting:**
-    *   **Code and Commands:** Any code snippets, config files (like JSON, YAML), or command-line instructions *MUST* be enclosed in Markdown code blocks. This is an absolute rule for all parts of your output.
-    *   **Language:** All output, both in the thinking block and the final JSON, must be exclusively in Persian.`,
+    *   **Phase 1 (Vector Engineering):** Your only task is to generate Google Search vectors based on the user's query. Output each vector in the format \`[SEARCH_VECTOR: your search query here]\`.
+    *   **Phase 2 (Research & Synthesis):** Your primary output for this phase is a single \`<thinking>\` tag containing your entire analysis in Persian.
+        *   **Source Prioritization:** The 'Knowledge Base' is your primary source. *Always* begin your analysis by querying it. Only if the information is insufficient, use live web search.
+        *   **Live Reporting:** Inside the \`<thinking>\` block, report progress:
+            *   Phase updates: \`[PHASE: PHASE_NAME]\`
+            *   Found sources (immediately): \`<FOUND_SOURCE url="..." title="..." summary="..."/>\`
+    *   **Phase 3 (Solution Engineering):** Your only task is to generate a single, valid JSON object based on the analysis provided to you. Do not add any extra text outside the JSON structure.
+
+4.  **CRITICAL SYNTHESIS STEP & FAILURE CONDITION (For Phase 2):**
+    After using Google Search and reporting \`<FOUND_SOURCE>\` tags, you **MUST** include a new section in your thinking block titled \`===[ سنتز یافته‌های جستجو ]===\`.
+    In this section, you must synthesize the information from the sources. Explicitly reference them, combine key insights, identify conflicting information, and derive conclusions based on the evidence.
+    **FAILURE:** Simply listing sources without this detailed synthesis is a PROTOCOL VIOLATION and will cause the operation to fail. The synthesis section is NON-NEGOTIABLE.
+
+5.  **Content Formatting:**
+    *   **Code and Commands:** Any code snippets, config files (like JSON, YAML), or command-line instructions *MUST* be enclosed in Markdown code blocks.
+    *   **Language:** All output must be exclusively in Persian.`,
 };
 
 const FEEDBACK_STORAGE_KEY = 'rah-yab-source-feedback';
@@ -432,7 +439,7 @@ ${newBriefing.executiveSummary}
             aria-label="تنظیمات"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.438.995s.145.755.438.995l1.003.827c.48.398.668 1.05.26 1.431l-1.296 2.247a1.125 1.125 0 01-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.075.124a6.57 6.57 0 01-.22.127c-.332.183-.582.495-.645.87l-.213 1.281c-.09.543-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313.686-.645-.87a6.52 6.52_0 01-.22-.127c-.324-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 01-1.37-.49l-1.296-2.247a1.125 1.125 0 01.26-1.431l1.003-.827c.293-.24.438-.613-.438.995s-.145-.755-.438-.995l-1.003-.827a1.125 1.125 0 01-.26-1.431l1.296-2.247a1.125 1.125 0 011.37-.49l1.217.456c.355.133.75.072 1.075.124.072-.044.146-.087.22-.127.332-.183.582-.495.645-.87l.213-1.281z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.438.995s.145.755.438.995l1.003.827c.48.398.668 1.05.26 1.431l-1.296 2.247a1.125 1.125 0 01-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.075.124a6.57 6.57 0 01-.22.127c-.332.183-.582.495-.645.87l-.213 1.281c-.09.543-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313.686-.645.87a6.52 6.52_0 01-.22-.127c-.324-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 01-1.37-.49l-1.296-2.247a1.125 1.125 0 01.26-1.431l1.003-.827c.293-.24.438-.613-.438.995s-.145-.755-.438-.995l-1.003-.827a1.125 1.125 0 01-.26-1.431l1.296-2.247a1.125 1.125 0 011.37-.49l1.217.456c.355.133.75.072 1.075.124.072-.044.146-.087.22-.127.332-.183.582-.495.645-.87l.213-1.281z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </button>
