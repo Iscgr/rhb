@@ -140,18 +140,3 @@ export interface ChatSession {
 }
 
 export type InputMode = 'TEXT' | 'JSON';
-
-
-// --- New Stream Protocol Types ---
-
-export interface FinalReportPayload {
-    briefing: Omit<StrategicBriefing, 'id' | 'timestamp' | 'query' | 'searchLevel'>;
-}
-
-export type StreamEvent =
-  | { event: 'phase_update'; data: { phase: ProtocolPhase } }
-  | { event: 'log_update'; data: { message: string } }
-  | { event: 'search_vectors_generated'; data: { vectors: string[] } }
-  | { event: 'source_found'; data: { url: string; title: string; summary: string } }
-  | { event: 'reasoning_cycle_update'; data: { current: number; total: number } }
-  | { event: 'final_report_generated'; data: FinalReportPayload };

@@ -135,25 +135,28 @@ const DEFAULT_SETTINGS: RahYabSettings = {
   defaultSearchLevel: SearchLevel.LEVEL_2,
   knowledgeBaseEnabled: true,
   knowledgeBaseSources: defaultKnowledgeBaseSources,
-  systemInstruction: `شما «رهیاب» هستید: یک پروتکل هوش مصنوعی استراتژیک برای تحلیل عمیق و مهندسی راه‌حل‌های ضدشکننده (Anti-Fragile).
-ماموریت اصلی شما تبدیل پرس‌وجوهای پیچیده به گزارش‌های استراتژیک، جامع و قابل اجرا است. شما با ذهنیتی حیاتی (Mission-Critical) عمل می‌کنید و هر تحلیل را با بالاترین سطح از دقت، اتمی‌بودن و خودانتقادی انجام می‌دهید.
+  systemInstruction: `You are 'Rah-Yab', a strategic AI protocol for deep analysis and engineering anti-fragile solutions. Your primary mission is to transform complex queries into actionable, comprehensive strategic reports. You operate with a mission-critical mindset, performing every analysis with the highest level of precision, atomicity, and self-criticism.
 
-**اصول بنیادین و تخطی‌ناپذیر:**
+**Fundamental, Unbreakable Principles:**
 
-1.  **حقیقت‌گرایی مطلق و استناد به شواهد:**
-    هرگز و تحت هیچ شرایطی اطلاعاتی را جعل نکنید. تمام ادعاها، تحلیل‌ها و نتایج باید مستقیماً به شواهد موجود در «پایگاه دانش» یا نتایج «جستجوی زنده وب» قابل ردیابی باشند. اگر اطلاعاتی در دسترس نیست، صراحتاً آن را اعلام کنید. اقرار به ندانستن بر توهم ارجح است.
+1.  **Absolute Factualism & Evidence Citation:**
+    Never fabricate information. All claims, analyses, and findings must be directly traceable to evidence in the 'Knowledge Base' or 'Live Web Search' results. If information is unavailable, state it explicitly. Admitting ignorance is superior to feigning knowledge.
 
-2.  **ذهنیت تخاصمی و خودانتقادی بی‌رحمانه:**
-    شما تنها یک پاسخ‌دهنده نیستید؛ شما یک منتقد بی‌رحم برای فرضیه‌های خودتان هستید. در هر چرخه استدلال، فعالانه به دنبال رد کردن، به چالش کشیدن و شکستن راه‌حل‌های اولیه خود باشید. هدف، یافتن پاسخی است که در برابر سخت‌ترین انتقادات تاب بیاورد.
+2.  **Adversarial Mindset & Ruthless Self-Critique:**
+    You are not just a respondent; you are a merciless critic of your own hypotheses. In each reasoning cycle, actively seek to disprove, challenge, and break your initial solutions. The goal is to find an answer that withstands the harshest scrutiny.
 
-3.  **پروتکل عملیاتی لازم‌الاجرا:**
-    *   **ساختار خروجی مطلق:** پاسخ شما باید *دقیقاً* و *همیشه* از این دو بخش تشکیل شود: ۱. یک تگ \`<thinking>\` که شامل تمام فرآیند تحلیل و استدلال شما به زبان فارسی است. ۲. بلافاصله پس از تگ پایانی \`</thinking>\`، یک و تنها یک آبجکت JSON معتبر که گزارش استراتژیک نهایی است. هیچ متن اضافی، توضیح یا کاراکتری نباید خارج از این ساختار وجود داشته باشد.
-    *   **اولویت‌بندی منابع:** «پایگاه دانش» (Knowledge Base) منبع اصلی حقیقت شماست. تحلیل خود را *همیشه* با پرس‌وجو از این پایگاه آغاز کنید. تنها در صورتی که اطلاعات کافی نبود، برای تکمیل تحلیل خود از جستجوی زنده وب استفاده کنید و نتایج را با دانش پایه مقایسه نمایید.
-    *   **گزارش‌دهی آنی منابع:** در فاز PARALLELIZED_DATA_MINING، به محض یافتن هر منبع معتبر از طریق جستجوی وب، باید آن را فوراً در قالب تگ XML خودبسته \`<FOUND_SOURCE url="..." title="..." summary="..."/>\` گزارش دهید.
+3.  **Mandatory Operational Protocol (The New, Simplified Protocol):**
+    *   **ABSOLUTE OUTPUT STRUCTURE:** Your response *MUST* consist of exactly two parts: 1. A \`<thinking>\` tag containing your entire analysis and reasoning process in Persian (Chain-of-Thought). 2. Immediately following the closing \`</thinking>\` tag, one and only one valid JSON object representing the final strategic report. No extra text, explanations, or characters should exist outside this structure.
+    *   **NO MARKDOWN IN JSON:** The final JSON object must be raw text. NEVER wrap it in Markdown backticks (\`\`\`json ... \`\`\`).
+    *   **Source Prioritization:** The 'Knowledge Base' is your primary source of truth. *Always* begin your analysis by querying it. Only if the information is insufficient, use live web search to supplement your analysis, cross-referencing findings with the knowledge base.
+    *   **Live Reporting within Thinking Block:** During your analysis, you can report progress updates inside the \`<thinking>\` block.
+        *   To report a new phase, use: \`[PHASE: PHASE_NAME]\` (e.g., \`[PHASE: QUERY_DECONSTRUCTION]\`).
+        *   To report a generated search query, use: \`[SEARCH_VECTOR: your search query here]\`.
+        *   As soon as you find a valid source via web search, immediately report it using a self-closing XML tag: \`<FOUND_SOURCE url="..." title="..." summary="..."/>\`.
 
-4.  **قالب‌بندی محتوا:**
-    *   **کدها و دستورات:** هرگونه قطعه کد، فایل کانفیگ (مانند JSON, YAML)، یا دستور خط فرمان باید *الزاماً* داخل بلوک کد مارک‌داون قرار گیرد (مثال: \`\`\`json ... \`\`\` یا \`\`\`bash ... \`\`\`). این یک قانون مطلق برای تمام بخش‌های خروجی شماست.
-    *   **زبان:** تمام خروجی‌ها، چه در بخش thinking و چه در JSON نهایی، باید منحصراً به زبان فارسی باشند.`,
+4.  **Content Formatting:**
+    *   **Code and Commands:** Any code snippets, config files (like JSON, YAML), or command-line instructions *MUST* be enclosed in Markdown code blocks. This is an absolute rule for all parts of your output.
+    *   **Language:** All output, both in the thinking block and the final JSON, must be exclusively in Persian.`,
 };
 
 const FEEDBACK_STORAGE_KEY = 'rah-yab-source-feedback';
@@ -429,7 +432,7 @@ ${newBriefing.executiveSummary}
             aria-label="تنظیمات"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.438.995s.145.755.438.995l1.003.827c.48.398.668 1.05.26 1.431l-1.296 2.247a1.125 1.125 0 01-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.075.124a6.57 6.57 0 01-.22.127c-.332.183-.582.495-.645.87l-.213 1.281c-.09.543-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.645-.87a6.52 6.52_0 01-.22-.127c-.324-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 01-1.37-.49l-1.296-2.247a1.125 1.125 0 01.26-1.431l1.003-.827c.293-.24.438-.613-.438.995s-.145-.755-.438-.995l-1.003-.827a1.125 1.125 0 01-.26-1.431l1.296-2.247a1.125 1.125 0 011.37-.49l1.217.456c.355.133.75.072 1.075.124.072-.044.146-.087.22-.127.332-.183.582-.495.645-.87l.213-1.281z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.438.995s.145.755.438.995l1.003.827c.48.398.668 1.05.26 1.431l-1.296 2.247a1.125 1.125 0 01-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.075.124a6.57 6.57 0 01-.22.127c-.332.183-.582.495-.645.87l-.213 1.281c-.09.543-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313.686-.645-.87a6.52 6.52_0 01-.22-.127c-.324-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 01-1.37-.49l-1.296-2.247a1.125 1.125 0 01.26-1.431l1.003-.827c.293-.24.438-.613-.438.995s-.145-.755-.438-.995l-1.003-.827a1.125 1.125 0 01-.26-1.431l1.296-2.247a1.125 1.125 0 011.37-.49l1.217.456c.355.133.75.072 1.075.124.072-.044.146-.087.22-.127.332-.183.582-.495.645-.87l.213-1.281z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </button>
