@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RAH-YAB - دستیار هوش مصنوعی</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Vazirmatn', sans-serif;
+        background-color: #0a0a0a;
+        color: #e0e0e0;
+        overflow-x: hidden;
+      }
+      .bg-grid-pattern {
+        background-image:
+          linear-gradient(rgba(10, 77, 104, 0.2) 1px, transparent 1px),
+          linear-gradient(to right, rgba(10, 77, 104, 0.2) 1px, transparent 1px);
+        background-size: 3rem 3rem;
+      }
+      .scanline {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        background: linear-gradient(
+          to bottom,
+          rgba(15, 23, 42, 0) 0%,
+          rgba(15, 23, 42, 0.5) 50%,
+          rgba(15, 23, 42, 0) 100%
+        );
+        animation: scan 10s linear infinite;
+        opacity: 0.1;
+      }
+      @keyframes scan {
+        0% { background-position: 0 0; }
+        100% { background-position: 0 100vh; }
+      }
+      .glow-border {
+        box-shadow: 0 0 5px rgba(0, 190, 255, 0.2), 0 0 10px rgba(0, 190, 255, 0.2), 0 0 15px rgba(0, 190, 255, 0.1);
+      }
+      @keyframes fade-in-up {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in-up {
+        animation: fade-in-up 0.6s ease-out forwards;
+      }
+      .glass-card {
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(56, 189, 248, 0.2);
+      }
+      .custom-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #06b6d4; /* cyan-500 */
+        cursor: pointer;
+        border-radius: 50%;
+        margin-top: -7px; /* Centers the thumb on the track */
+        border: 2px solid #0f172a; /* slate-900 */
+      }
+      .custom-range::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: #06b6d4;
+        cursor: pointer;
+        border-radius: 50%;
+        border: 2px solid #0f172a;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
+    "hooks/": "/hooks/",
+    "react-markdown": "https://esm.sh/react-markdown@9.0.1",
+    "remark-gfm": "https://esm.sh/remark-gfm@4.0.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <div class="scanline"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
